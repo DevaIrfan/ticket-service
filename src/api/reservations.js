@@ -1,31 +1,30 @@
-import express from 'express';
-import { supabase } from '../config/supabaseClient.js';
+import express from "express";
+import { supabase } from "../config/supabaseClient.js";
 
 const router = express.Router();
 
-// GET schedules
-router.get('/', async (req, res) => {
-  const { data, error } = await supabase
-    .from('schedules')
-    .select('*, routes(origin, destination)');
+router.post("/", async (req, res) => {
+  const { schedule_id, passenger_name, seat_number, user_id } = req.body;
 
-  if (error) return res.status(500).json({ error });
-  res.json(data);
-});
-
-// POST new schedule
-router.post('/', async (req, res) => {
-  const { route_id, departure_time, price, seats_total } = req.body;
+  if (!schedule_id || !passenger_name || !seat_number || !user_id) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
   const { data, error } = await supabase
-    .from('schedules')
+    .from("reservations")
     .insert([
-      { route_id, departure_time, price, seats_total, seats_available: seats_total }
+      {
+        schedule_id,
+        passenger_name,
+        seat_number,
+        user_id
+      },
     ])
     .select();
 
   if (error) return res.status(500).json({ error });
-  res.json(data[0]);
+
+  res.json({ reservation: data[0] });
 });
 
 export default router;
