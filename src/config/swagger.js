@@ -1,0 +1,16 @@
+const swaggerJsdoc = require('swagger-jsdoc');
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Ticket Service API',
+      version: '1.0.0',
+      description: 'Dokumentasi API Ticket Service menggunakan Swagger'
+    }
+  },
+  apis: ['./src/api/*.js'], // Scan semua file di folder api
+};
+
+const swaggerSpec = swaggerJsdoc(options);
+module.exports = swaggerSpec;

@@ -15,7 +15,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui": "^5.30.3",
+    "swagger-ui-dist": "^5.30.3",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
