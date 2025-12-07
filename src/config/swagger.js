@@ -7,17 +7,10 @@ const options = {
       title: 'Ticket Service API',
       version: '1.0.0',
       description: 'Dokumentasi API Ticket Service menggunakan Swagger'
-    },
-    servers: [
-      {
-        url: 'http://localhost:4000',
-        description: 'Local server'
-      }
-    ]
+    }
   },
-  apis: ['./src/api/*.js'], // Scan semua file endpoint
+  apis: ['./src/api/*.js'],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
-
 export default swaggerSpec;

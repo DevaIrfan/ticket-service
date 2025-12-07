@@ -22,10 +22,5 @@ app.get('/', (req, res) => {
   res.send("Ticket Service Running");
 });
 
-const PORT = 4000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`API Docs available at http://localhost:${PORT}/api-docs`);
-});
 
 export default app;
