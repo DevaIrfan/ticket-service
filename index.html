@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagram Arsitektur Sistem</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        .diagram-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        .diagram-container.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+        }
+
+        .layer {
+            fill: #f8f9fa;
+            stroke: #495057;
+            stroke-width: 2;
+            rx: 10;
+        }
+
+        .service {
+            fill: #4c6ef5;
+            stroke: #364fc7;
+            stroke-width: 2;
+            rx: 8;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .service:hover {
+            fill: #5c7cfa;
+            transform: scale(1.05);
+        }
+
+        .database {
+            fill: #51cf66;
+            stroke: #2f9e44;
+            stroke-width: 2;
+            rx: 8;
+        }
+
+        .client {
+            fill: #ff6b6b;
+            stroke: #c92a2a;
+            stroke-width: 2;
+            rx: 8;
+        }
+
+        .module {
+            fill: #ffd43b;
+            stroke: #fab005;
+            stroke-width: 2;
+            rx: 6;
+        }
+
+        .util {
+            fill: #ff8787;
+            stroke: #fa5252;
+            stroke-width: 2;
+            rx: 6;
+        }
+
+        .text-title {
+            font-size: 16px;
+            font-weight: bold;
+            fill: white;
+            text-anchor: middle;
+        }
+
+        .text-subtitle {
+            font-size: 12px;
+            fill: white;
+            text-anchor: middle;
+        }
+
+        .text-label {
+            font-size: 14px;
+            fill: #333;
+            text-anchor: middle;
+            font-weight: 600;
+        }
+
+        .arrow {
+            stroke: #495057;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .arrow-bidirectional {
+            stroke: #495057;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+            marker-start: url(#arrowhead-reverse);
+        }
+
+        .arrow-api {
+            stroke: #4c6ef5;
+            stroke-width: 2.5;
+            fill: none;
+            marker-end: url(#arrowhead-blue);
+            stroke-dasharray: 5,5;
+        }
+
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            border: 2px solid #333;
+        }
+
+        .legend-text {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .diagram-container {
+                padding: 20px;
+            }
+            
+            .tab {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Diagram Arsitektur Sistem Pemesanan Tiket</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showDiagram('overview')">Overview Arsitektur</div>
+            <div class="tab" onclick="showDiagram('ticket')">Ticket Service</div>
+            <div class="tab" onclick="showDiagram('user')">User Service</div>
+            <div class="tab" onclick="showDiagram('sequence')">Sequence Diagram</div>
+            <div class="tab" onclick="showDiagram('deployment')">Deployment</div>
+        </div>
+
+        <!-- Overview Diagram -->
+        <div id="overview" class="diagram-container active">
+            <svg viewBox="0 0 1200 800">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#495057"/>
+                    </marker>
+                    <marker id="arrowhead-reverse" markerWidth="10" markerHeight="10" refX="1" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <polygon points="10 0, 0 3, 10 6" fill="#495057"/>
+                    </marker>
+                    <marker id="arrowhead-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <polygon points="0 0, 10 3, 0 6" fill="#4c6ef5"/>
+                    </marker>
+                </defs>
+
+                <!-- Client Layer -->
+                <rect class="client" x="450" y="30" width="300" height="80"/>
+                <text class="text-title" x="600" y="65">Client Application</text>
+                <text class="text-subtitle" x="600" y="85">Web / Mobile</text>
+
+                <!-- API Gateway -->
+                <rect class="layer" x="400" y="150" width="400" height="60"/>
+                <text class="text-label" x="600" y="185">API Gateway / Load Balancer</text>
+
+                <!-- Services -->
+                <rect class="service" x="150" y="270" width="350" height="120" data-tooltip="User Service: Mengelola autentikasi, user profile, dan orchestrasi booking"/>
+                <text class="text-title" x="325" y="310">User Service</text>
+                <text class="text-subtitle" x="325" y="330">Port: 3001</text>
+                <text class="text-subtitle" x="325" y="350">• Authentication & Authorization</text>
+                <text class="text-subtitle" x="325" y="370">• User Management</text>
+
+                <rect class="service" x="700" y="270" width="350" height="120" data-tooltip="Ticket Service: Mengelola jadwal perjalanan dan reservasi tiket"/>
+                <text class="text-title" x="875" y="310">Ticket Service</text>
+                <text class="text-subtitle" x="875" y="330">Deploy Vercel</text>
+                <text class="text-subtitle" x="875" y="350">• Schedule Management</text>
+                <text class="text-subtitle" x="875" y="370">• Reservation Management</text>
+
+                <!-- Database -->
+                <rect class="database" x="350" y="470" width="500" height="100"/>
+                <text class="text-title" x="600" y="510">Supabase Backend</text>
+                <text class="text-subtitle" x="600" y="535">PostgreSQL • Authentication • Storage • Realtime</text>
+
+                <!-- Arrows -->
+                <path class="arrow" d="M 600 110 L 600 150"/>
+                <path class="arrow" d="M 550 210 L 325 270"/>
+                <path class="arrow" d="M 650 210 L 875 270"/>
+                <path class="arrow-api" d="M 500 330 L 700 330"/>
+                <text x="590" y="320" style="font-size: 12px; fill: #4c6ef5; font-weight: bold;">HTTP/REST</text>
+                
+                <path class="arrow" d="M 325 390 L 450 470"/>
+                <path class="arrow" d="M 875 390 L 750 470"/>
+
+                <!-- Labels -->
+                <text x="600" y="140" style="font-size: 12px; fill: #666; text-anchor: middle;">HTTPS</text>
+            </svg>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #ff6b6b;"></div>
+                    <span class="legend-text">Client Layer</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #4c6ef5;"></div>
+                    <span class="legend-text">Microservices</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #51cf66;"></div>
+                    <span class="legend-text">Database/Backend</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #f8f9fa; border-color: #495057;"></div>
+                    <span class="legend-text">Infrastructure</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Service Diagram -->
+        <div id="ticket" class="diagram-container">
+            <svg viewBox="0 0 1200 700">
+                <text x="600" y="30" style="font-size: 24px; fill: #333; text-anchor: middle; font-weight: bold;">Ticket Service Architecture</text>
+
+                <!-- Entry Point -->
+                <rect class="client" x="500" y="70" width="200" height="60"/>
+                <text class="text-title" x="600" y="105">index.js</text>
+
+                <!-- Routes -->
+                <rect class="module" x="500" y="170" width="200" height="60"/>
+                <text class="text-label" x="600" y="205">routes.js</text>
+
+                <!-- API Modules -->
+                <rect class="module" x="200" y="280" width="250" height="80"/>
+                <text class="text-label" x="325" y="310">schedules.js</text>
+                <text class="text-subtitle" x="325" y="330" style="fill: #333;">GET, POST, PUT, DELETE</text>
+                <text class="text-subtitle" x="325" y="345" style="fill: #333;">Manage Schedules</text>
+
+                <rect class="module" x="550" y="280" width="250" height="80"/>
+                <text class="text-label" x="675" y="310">reservations.js</text>
+                <text class="text-subtitle" x="675" y="330" style="fill: #333;">GET, POST, PUT, DELETE</text>
+                <text class="text-subtitle" x="675" y="345" style="fill: #333;">Manage Reservations</text>
+
+                <!-- Config -->
+                <rect class="util" x="150" y="420" width="200" height="60"/>
+                <text class="text-label" x="250" y="455">supabaseClient.js</text>
+
+                <rect class="util" x="850" y="170" width="200" height="60"/>
+                <text class="text-label" x="950" y="205">swagger.js</text>
+
+                <!-- Database -->
+                <rect class="database" x="350" y="540" width="500" height="80"/>
+                <text class="text-title" x="600" y="575">Supabase Database</text>
+                <text class="text-subtitle" x="600" y="595">schedules, reservations tables</text>
+
+                <!-- Arrows -->
+                <path class="arrow" d="M 600 130 L 600 170"/>
+                <path class="arrow" d="M 550 230 L 325 280"/>
+                <path class="arrow" d="M 650 230 L 675 280"/>
+                <path class="arrow" d="M 325 360 L 300 420"/>
+                <path class="arrow" d="M 675 360 L 300 420"/>
+                <path class="arrow" d="M 250 480 L 450 540"/>
+                <path class="arrow" d="M 700 170 L 850 170"/>
+            </svg>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #ffd43b;"></div>
+                    <span class="legend-text">API Modules</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #ff8787;"></div>
+                    <span class="legend-text">Configuration</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #51cf66;"></div>
+                    <span class="legend-text">Database</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Service Diagram -->
+        <div id="user" class="diagram-container">
+            <svg viewBox="0 0 1200 900">
+                <text x="600" y="30" style="font-size: 24px; fill: #333; text-anchor: middle; font-weight: bold;">User Service Architecture (Layered)</text>
+
+                <!-- Entry Point -->
+                <rect class="client" x="500" y="70" width="200" height="60"/>
+                <text class="text-title" x="600" y="105">index.js</text>
+
+                <!-- Routes Layer -->
+                <rect class="layer" x="100" y="160" width="1000" height="100"/>
+                <text x="150" y="185" style="font-size: 16px; fill: #333; font-weight: bold;">Routes Layer</text>
+                
+                <rect class="module" x="150" y="200" width="250" height="50"/>
+                <text class="text-label" x="275" y="230">auth.routes.js</text>
+                
+                <rect class="module" x="475" y="200" width="250" height="50"/>
+                <text class="text-label" x="600" y="230">user.routes.js</text>
+                
+                <rect class="module" x="800" y="200" width="250" height="50"/>
+                <text class="text-label" x="925" y="230">booking.routes.js</text>
+
+                <!-- Controllers Layer -->
+                <rect class="layer" x="100" y="300" width="1000" height="100"/>
+                <text x="150" y="325" style="font-size: 16px; fill: #333; font-weight: bold;">Controllers Layer</text>
+                
+                <rect class="module" x="150" y="340" width="250" height="50"/>
+                <text class="text-label" x="275" y="370">auth.controller.js</text>
+                
+                <rect class="module" x="475" y="340" width="250" height="50"/>
+                <text class="text-label" x="600" y="370">user.controller.js</text>
+                
+                <rect class="module" x="800" y="340" width="250" height="50"/>
+                <text class="text-label" x="925" y="370">booking.controller.js</text>
+
+                <!-- Services & Utils Layer -->
+                <rect class="layer" x="100" y="440" width="1000" height="100"/>
+                <text x="150" y="465" style="font-size: 16px; fill: #333; font-weight: bold;">Services & Utils Layer</text>
+                
+                <rect class="service" x="150" y="480" width="200" height="50"/>
+                <text class="text-label" x="250" y="510">ticketService.js</text>
+                
+                <rect class="util" x="425" y="480" width="150" height="50"/>
+                <text class="text-label" x="500" y="510">hash.js</text>
+                
+                <rect class="util" x="650" y="480" width="150" height="50"/>
+                <text class="text-label" x="725" y="510">jwt.js</text>
+
+                <!-- External Services -->
+                <rect class="service" x="150" y="580" width="200" height="60"/>
+                <text class="text-title" x="250" y="610">Ticket Service API</text>
+                <text class="text-subtitle" x="250" y="625">External HTTP</text>
+
+                <!-- Database -->
+                <rect class="database" x="500" y="580" width="300" height="60"/>
+                <text class="text-title" x="650" y="610">Supabase</text>
+                <text class="text-subtitle" x="650" y="625">users, bookings tables</text>
+
+                <!-- Arrows -->
+                <path class="arrow" d="M 600 130 L 600 200"/>
+                <path class="arrow" d="M 275 250 L 275 340"/>
+                <path class="arrow" d="M 600 250 L 600 340"/>
+                <path class="arrow" d="M 925 250 L 925 340"/>
+                
+                <path class="arrow" d="M 275 390 L 250 480"/>
+                <path class="arrow" d="M 275 390 L 500 480"/>
+                <path class="arrow" d="M 600 390 L 725 480"/>
+                <path class="arrow" d="M 925 390 L 250 480"/>
+                
+                <path class="arrow" d="M 250 530 L 250 580"/>
+                <path class="arrow" d="M 500 530 L 600 580"/>
+                <path class="arrow" d="M 725 530 L 650 580"/>
+            </svg>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #ffd43b;"></div>
+                    <span class="legend-text">Routes & Controllers</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #4c6ef5;"></div>
+                    <span class="legend-text">External Services</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #ff8787;"></div>
+                    <span class="legend-text">Utilities</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #51cf66;"></div>
+                    <span class="legend-text">Database</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sequence Diagram -->
+        <div id="sequence" class="diagram-container">
+            <svg viewBox="0 0 1200 800">
+                <text x="600" y="30" style="font-size: 24px; fill: #333; text-anchor: middle; font-weight: bold;">Booking Process - Sequence Diagram</text>
+
+                <!-- Actors -->
+                <rect class="client" x="50" y="70" width="150" height="60"/>
+                <text class="text-title" x="125" y="105">Client</text>
+                
+                <rect class="service" x="300" y="70" width="150" height="60"/>
+                <text class="text-title" x="375" y="105">User Service</text>
+                
+                <rect class="service" x="550" y="70" width="150" height="60"/>
+                <text class="text-title" x="625" y="105">Ticket Service</text>
+                
+                <rect class="database" x="850" y="70" width="150" height="60"/>
+                <text class="text-title" x="925" y="105">Supabase</text>
+
+                <!-- Lifelines -->
+                <line x1="125" y1="130" x2="125" y2="700" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5"/>
+                <line x1="375" y1="130" x2="375" y2="700" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5"/>
+                <line x1="625" y1="130" x2="625" y2="700" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5"/>
+                <line x1="925" y1="130" x2="925" y2="700" stroke="#ddd" stroke-width="2" stroke-dasharray="5,5"/>
+
+                <!-- Messages -->
+                <!-- 1. Login -->
+                <path class="arrow" d="M 125 170 L 375 170"/>
+                <text x="200" y="165" style="font-size: 12px; fill: #333;">1. POST /auth/login</text>
+                
+                <path class="arrow" d="M 375 200 L 925 200"/>
+                <text x="550" y="195" style="font-size: 12px; fill: #333;">2. Verify credentials</text>
+                
+                <path class="arrow" d="M 925 230 L 375 230"/>
+                <text x="550" y="225" style="font-size: 12px; fill: #333;">3. User data + JWT token</text>
+                
+                <path class="arrow" d="M 375 260 L 125 260"/>
+                <text x="200" y="255" style="font-size: 12px; fill: #333;">4. Return token</text>
+
+                <!-- 2. Get Schedules -->
+                <path class="arrow" d="M 125 310 L 625 310"/>
+                <text x="300" y="305" style="font-size: 12px; fill: #333;">5. GET /schedules</text>
+                
+                <path class="arrow" d="M 625 340 L 925 340"/>
+                <text x="750" y="335" style="font-size: 12px; fill: #333;">6. Query schedules</text>
+                
+                <path class="arrow" d="M 925 370 L 625 370"/>
+                <text x="750" y="365" style="font-size: 12px; fill: #333;">7. Schedule data</text>
+                
+                <path class="arrow" d="M 625 400 L 125 400"/>
+                <text x="300" y="395" style="font-size: 12px; fill: #333;">8. Return schedules</text>
+
+                <!-- 3. Create Booking -->
+                <path class="arrow" d="M 125 450 L 375 450"/>
+                <text x="200" y="445" style="font-size: 12px; fill: #333;">9. POST /bookings</text>
+                
+                <path class="arrow" d="M 375 480 L 625 480"/>
+                <text x="450" y="475" style="font-size: 12px; fill: #333;">10. Create reservation</text>
+                
+                <path class="arrow" d="M 625 510 L 925 510"/>
+                <text x="750" y="505" style="font-size: 12px; fill: #333;">11. Check & save</text>
+                
+                <path class="arrow" d="M 925 540 L 625 540"/>
+                <text x="750" y="535" style="font-size: 12px; fill: #333;">12. Reservation OK</text>
+                
+                <path class="arrow" d="M 625 570 L 375 570"/>
+                <text x="450" y="565" style="font-size: 12px; fill: #333;">13. Reservation ID</text>
+                
+                <path class="arrow" d="M 375 600 L 925 600"/>
+                <text x="550" y="595" style="font-size: 12px; fill: #333;">14. Save booking</text>
+                
+                <path class="arrow" d="M 925 630 L 375 630"/>
+                <text x="550" y="625" style="font-size: 12px; fill: #333;">15. Booking created</text>
+                
+                <path class="arrow" d="M 375 660 L 125 660"/>
+                <text x="200" y="655" style="font-size: 12px; fill: #333;">16. Success response</text>
+            </svg>
+        </div>
+
+        <!-- Deployment Diagram -->
+        <div id="deployment" class="diagram-container">
+            <svg viewBox="0 0 1200 700">
+                <text x="600" y="30" style="font-size: 24px; fill: #333; text-anchor: middle; font-weight: bold;">Deployment Architecture</text>
+
+                <!-- Vercel Platform -->
+                <rect class="layer" x="100" y="70" width="1000" height="320"/>
+                <text x="150" y="100" style="font-size: 18px; fill: #333; font-weight: bold;">Vercel Serverless Platform</text>
+
+                <!-- Ticket Service Deployment -->
+                <rect class="service" x="150" y="130" width="400" height="230"/>
+                <text class="text-title" x="350" y="165">ticket-service</text>
+                <text class="text-subtitle" x="350" y="190">Node.js + Express</text>
+                
+                <rect class="module" x="180" y="210" width="340" height="40"/>
+                <text class="text-label" x="350" y="235">• Auto-scaling</text>
+                
+                <rect class="module" x="180" y="260" width="340" height="40"/>
+                <text class="text-label" x="350" y="285">• Edge Network (CDN)</text>
+                
+                <rect class="module" x="180" y="310" width="340" height="40"/>
+                <text class="text-label" x="350" y="335">• Zero Configuration Deploy</text>
+
+                <!-- User Service Deployment -->
+                <rect class="service" x="650" y="130" width="400" height="230"/>
+                <text class="text-title" x="850" y="165">user-service</text>
+                <text class="text-subtitle" x="850" y="190">Node.js + Express</text>
+                
+                <rect class="module" x="680" y="210" width="340" height="40"/>
+                <text class="text-label" x="850" y="235">• Auto-scaling</text>
+                
+                <rect class="module" x="680" y="260" width="340" height="40"/>
+                <text class="text-label" x="850" y="285">• Edge Network (CDN)</text>
+                
+                <rect class="module" x="680" y="310" width="340" height="40"/>
+                <text class="text-label" x="850" y="335">• Zero Configuration Deploy</text>
+
+                <!-- Supabase -->
+                <rect class="database" x="300" y="450" width="600" height="180"/>
+                <text class="text-title" x="600" y="490">Supabase Cloud Platform</text>
+                
+                <rect class="module" x="330" y="520" width="240" height="40"/>
+                <text class="text-label" x="450" y="545">PostgreSQL Database</text>
+                
+                <rect class="module" x="330" y="570" width="240" height="40"/>
+                <text class="text-label" x="450" y="595">Authentication</text>
+                
+                <rect class="module" x="630" y="520" width="240" height="40"/>
+                <text class="text-label" x="750" y="545">Realtime Subscriptions</text>
+                
+                <rect class="module" x="630" y="570" width="240" height="40"/>
+                <text class="text-label" x="750" y="595">Storage & APIs</text>
+
+                <!-- Arrows -->
+                <path class="arrow" d="M 350 360 L 500 450"/>
+                <path class="arrow" d="M 850 360 L 700 450"/>
+
+                <!-- Environment Labels -->
+                <text x="200" y="660" style="font-size: 14px; fill: #666; font-weight: bold;">Environment: Production-ready with SSL/TLS</text>
+            </svg>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        function showDiagram(id) {
+            // Hide all diagrams
+            document.querySelectorAll('.diagram-container').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected diagram
+            document.getElementById(id).classList.add('active');
+            
+            // Add active to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Tooltip functionality
+        const tooltip = document.getElementById('tooltip');
+        
+        document.querySelectorAll('[data-tooltip]').forEach(element => {
+            element.addEventListener('mouseenter', function(e) {
+                const text = this.getAttribute('data-tooltip');
+                tooltip.textContent = text;
+                tooltip.classList.add('show');
+            });
+            
+            element.addEventListener('mousemove', function(e) {
+                tooltip.style.left = e.pageX + 10 + 'px';
+                tooltip.style.top = e.pageY + 10 + 'px';
+            });
+            
+            element.addEventListener('mouseleave', function() {
+                tooltip.classList.remove('show');
+            });
+        });
+
+        // Add animation to service boxes
+        document.querySelectorAll('.service').forEach(el => {
+            el.addEventListener('click', function() {
+                this.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html>
