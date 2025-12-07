@@ -11,8 +11,12 @@ import reservations from './api/reservations.js';
 const app = express();
 app.use(express.json());
 
+app.use(express.static('src'));
+
+
 // Swagger Docs Endpoint
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/swagger-ui', express.static('node_modules/swagger-ui-dist'));
 
 app.use('/routes', routes);
 app.use('/schedules', schedules);
